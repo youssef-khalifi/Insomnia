@@ -23,9 +23,9 @@ public class DeleteCollectionCommandHandler : IRequestHandler<DeleteCollectionCo
     {
         try
         {
-            var product = await _sqliteContext.Collections.FirstOrDefaultAsync(c => c.SyncId == request.SyncId, cancellationToken);
+            var collection = await _sqliteContext.Collections.FirstOrDefaultAsync(c => c.SyncId == request.SyncId, cancellationToken);
 
-            if (product == null)
+            if (collection == null)
             {
                 _logger.LogWarning($"Collection with ID {request.Id} not found for deletion");
                 return false;

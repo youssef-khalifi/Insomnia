@@ -40,7 +40,6 @@ namespace BackEnd.Migrations
                     StatusCode = table.Column<int>(type: "INTEGER", nullable: false),
                     ResponseTime = table.Column<int>(type: "INTEGER", nullable: false),
                     Body = table.Column<string>(type: "TEXT", nullable: false),
-                    HeadersJson = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -59,18 +58,18 @@ namespace BackEnd.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     Url = table.Column<string>(type: "TEXT", nullable: false),
                     Method = table.Column<string>(type: "TEXT", nullable: false),
                     Body = table.Column<string>(type: "TEXT", nullable: false),
                     ResponseId = table.Column<int>(type: "INTEGER", nullable: false),
-                    HeadersJson = table.Column<string>(type: "TEXT", nullable: false),
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsSynced = table.Column<bool>(type: "INTEGER", nullable: false),
                     LastSyncedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    SyncId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CollectionId = table.Column<int>(type: "INTEGER", nullable: true)
+                    SyncId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -79,7 +78,8 @@ namespace BackEnd.Migrations
                         name: "FK_Requests_Collections_CollectionId",
                         column: x => x.CollectionId,
                         principalTable: "Collections",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Requests_Responses_ResponseId",
                         column: x => x.ResponseId,

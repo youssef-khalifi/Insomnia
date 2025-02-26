@@ -17,17 +17,31 @@ public class TestSyncController : ControllerBase
         _sqlServerDbContext = sqlServerDbContext;
     }
 
-    [HttpGet("sqlite")]
+    [HttpGet("localCollection")]
     public async Task<ActionResult> GetLocal()
     {
-        var collections = await _sqliteDbContext.Collections.ToListAsync();
+        var collections = await _sqliteDbContext.Collections.Include(c => c.Requests).ToListAsync();
         return Ok(collections);
     }
     
-    [HttpGet("sqlserver")]
+    [HttpGet("localRequest")]
+    public async Task<ActionResult> GetLocalRequest()
+    {
+        var collections = await _sqliteDbContext.Requests.ToListAsync();
+        return Ok(collections);
+    }
+    
+    [HttpGet("RemoteCollection")]
     public async Task<ActionResult> GetRemote()
     {
-        var collections = await _sqlServerDbContext.Collections.ToListAsync();
+        var collections = await _sqlServerDbContext.Collections.Include(c => c.Requests).ToListAsync();
+        return Ok(collections);
+    }
+    
+    [HttpGet("RemoteRequest")]
+    public async Task<ActionResult> GetRemoteRequest()
+    {
+        var collections = await _sqlServerDbContext.Requests.ToListAsync();
         return Ok(collections);
     }
 }

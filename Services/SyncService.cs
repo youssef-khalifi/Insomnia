@@ -49,7 +49,8 @@ public class SyncService : ISyncService
                                 Description = sqliteCollection.Description,
                                 CreatedAt = sqliteCollection.CreatedAt,
                                 UpdatedAt = sqliteCollection.UpdatedAt,
-                                IsDeleted = sqliteCollection.IsDeleted
+                                IsDeleted = sqliteCollection.IsDeleted,
+                               
                             };
 
                             await _sqlServerContext.Collections.AddAsync(newCollection);
@@ -119,10 +120,7 @@ public class SyncService : ISyncService
             return result;
     }
 
-    public Task<SyncResult> SyncResponseToSqlServer()
-    {
-        throw new NotImplementedException();
-    }
+    
 
     public async Task<SyncResult> SyncRequestToSqlServer()
     {
@@ -154,6 +152,7 @@ public class SyncService : ISyncService
                                 Url = sqliteRequest.Url,
                                 Method = sqliteRequest.Method,
                                 Body = sqliteRequest.Body,
+                                CollectionId = sqliteRequest.CollectionId,
                                 CreatedAt = sqliteRequest.CreatedAt,
                                 UpdatedAt = sqliteRequest.UpdatedAt,
                                 IsDeleted = sqliteRequest.IsDeleted
@@ -231,50 +230,72 @@ public class SyncService : ISyncService
             return result;
     }
 
-    
-    public async Task<bool> DeleteCollection(Guid collectionSyncId)
+    public Task<SyncResult> SyncResponseToSqlServer()
     {
-        try
-        {
-            var sqliteTask = Task.Run(async () =>
-            {
-                var sqliteCollection = await _sqliteContext.Collections
-                    .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(c => c.SyncId == collectionSyncId);
-
-                if (sqliteCollection != null)
-                {
-                    sqliteCollection.IsDeleted = true;
-                    sqliteCollection.UpdatedAt = DateTime.UtcNow;
-                    sqliteCollection.IsSynced = false;
-                    await _sqliteContext.SaveChangesAsync();
-                }
-            });
-
-            var sqlServerTask = Task.Run(async () =>
-            {
-                var sqlServerCollection = await _sqlServerContext.Requests
-                    .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(c => c.SyncId == collectionSyncId);
-
-                if (sqlServerCollection != null)
-                {
-                    sqlServerCollection.IsDeleted = true;
-                    sqlServerCollection.UpdatedAt = DateTime.UtcNow;
-                    await _sqlServerContext.SaveChangesAsync();
-                }
-            });
-
-            await Task.WhenAll(sqliteTask, sqlServerTask);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error deleting Collection with ID {collectionSyncId}");
-            return false;
-        }
+        throw new NotImplementedException();
     }
+   public async Task<bool> DeleteCollection(Guid collectionSyncId)
+{
+    try
+    {
+        var sqliteTask = Task.Run(async () =>
+        {
+            var sqliteCollection = await _sqliteContext.Collections
+                .IgnoreQueryFilters()
+                .Include(c => c.Requests) // Include related requests
+                .FirstOrDefaultAsync(c => c.SyncId == collectionSyncId);
+
+            if (sqliteCollection != null)
+            {
+                sqliteCollection.IsDeleted = true;
+                sqliteCollection.UpdatedAt = DateTime.UtcNow;
+                sqliteCollection.IsSynced = false;
+
+                // Mark related requests as deleted
+                foreach (var request in sqliteCollection.Requests)
+                {
+                    request.IsDeleted = true;
+                    request.UpdatedAt = DateTime.UtcNow;
+                    request.IsSynced = false;
+                }
+
+                await _sqliteContext.SaveChangesAsync();
+            }
+        });
+
+        var sqlServerTask = Task.Run(async () =>
+        {
+            var sqlServerCollection = await _sqlServerContext.Collections
+                .IgnoreQueryFilters()
+                .Include(c => c.Requests) // Include related requests
+                .FirstOrDefaultAsync(c => c.SyncId == collectionSyncId);
+
+            if (sqlServerCollection != null)
+            {
+                sqlServerCollection.IsDeleted = true;
+                sqlServerCollection.UpdatedAt = DateTime.UtcNow;
+
+                // Mark related requests as deleted
+                foreach (var request in sqlServerCollection.Requests)
+                {
+                    request.IsDeleted = true;
+                    request.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _sqlServerContext.SaveChangesAsync();
+            }
+        });
+
+        await Task.WhenAll(sqliteTask, sqlServerTask);
+
+        return true;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error deleting Collection with ID {collectionSyncId}");
+        return false;
+    }
+}
 
     public async Task<bool> DeleteRequest(Guid requestSyncId)
     {
@@ -326,6 +347,34 @@ public class SyncService : ISyncService
         throw new NotImplementedException();
     }
     
-    
+    public async Task<SyncResult> SyncAllToSqlServer()
+    {
+        var overallResult = new SyncResult { Success = true };
+
+        try
+        {
+            // Sync Collections
+            var collectionsResult = await SyncCollectionsToSqlServer();
+        
+            // Sync Requests
+            var requestsResult = await SyncRequestToSqlServer();
+        
+            // Combine results
+            overallResult.Added = collectionsResult.Added + requestsResult.Added;
+            overallResult.Updated = collectionsResult.Updated + requestsResult.Updated;
+            overallResult.Deleted = collectionsResult.Deleted + requestsResult.Deleted;
+        
+            overallResult.Message = $"Sync completed successfully. Added: {overallResult.Added}, Updated: {overallResult.Updated}, Deleted: {overallResult.Deleted}";
+        }
+        catch (Exception ex)
+        {
+            overallResult.Success = false;
+            overallResult.Message = $"Sync failed: {ex.Message}";
+            _logger.LogError(ex, "Error during full database synchronization");
+        }
+
+        return overallResult;
+    }
+
     
 }

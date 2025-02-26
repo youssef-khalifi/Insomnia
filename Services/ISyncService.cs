@@ -11,4 +11,5 @@ public interface ISyncService
     Task<bool> DeleteCollection(Guid collectionSyncId);
     Task<bool> DeleteRequest(Guid requestSyncId);
     Task<bool> DeleteResponse(int responseId);
+    Task<SyncResult> SyncAllToSqlServer();
 }
