@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Net;
 using System.Text.Json;
 
 namespace BackEnd.Models;
@@ -7,8 +8,8 @@ namespace BackEnd.Models;
 public class ResponseApi
 {
     public int Id { get; set; }
-    public int StatusCode { get; set; }
-    public int ResponseTime { get; set; }
+    public HttpStatusCode StatusCode { get; set; }
+    public long ResponseTime { get; set; }
     public string Body { get; set; } = string.Empty;
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -22,8 +22,22 @@ builder.Services.AddMediatR(cfg =>
 });
 
 builder.Services.AddScoped<ISyncService, SyncService>();
+builder.Services.AddHttpClient();  // Add this line to register HttpClient
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4200") 
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
+
 
 var app = builder.Build();
+
+app.UseCors("AllowAngularApp");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

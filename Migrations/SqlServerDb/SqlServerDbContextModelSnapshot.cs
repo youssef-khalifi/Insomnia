@@ -148,8 +148,8 @@ namespace BackEnd.Migrations.SqlServerDb
                     b.Property<DateTime?>("LastSyncedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ResponseTime")
-                        .HasColumnType("int");
+                    b.Property<long>("ResponseTime")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("StatusCode")
                         .HasColumnType("int");
