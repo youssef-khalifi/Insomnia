@@ -6,7 +6,7 @@ namespace BackEnd.Models;
 
 public class ResponseApi
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public int StatusCode { get; set; }
     public int ResponseTime { get; set; }
     public string Body { get; set; } = string.Empty;
